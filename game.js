@@ -15,6 +15,10 @@ function preload(){
     this.load.image("plat5", 'assets/ground.png');
 
     this.load.image("keys", 'assets/instructions.png');
+    this.load.image("mailbox", 'assets/mailbox.png');
+
+    this.load.image("envelope", 'assets/envelope.png');
+    this.load.image("letter", 'assets/letter.png');
 
     this.load.spritesheet('player', 'assets/spritesheet.png',{
         frameWidth: 100,
@@ -24,7 +28,7 @@ function preload(){
 
 function create(){
     this.transitioning = false;
-    
+
     const bg = this.add.image(500,350, 'bg');
     bg.setDisplaySize(1000,700);
     bg.setScrollFactor(0); //background doesn't scroll
@@ -35,15 +39,23 @@ function create(){
     player.setCollideWorldBounds(true);
     player.setVisible(true);
 
-    /*if(collisionbox) {
-        collisionbox.clear(true, true); // remove all previous children
-    }*/
+
     collisionbox = this.physics.add.staticGroup();
 
     if(level === 1){
         const keys = this.add.image(499.5,700-505,'keys');
         keys.setDisplaySize(197,130);
         keys.setScrollFactor(0);
+    }
+
+    if(level === 5){
+        const mailbox = this.physics.add.staticSprite(775,700-170,'mailbox');
+        mailbox.setDisplaySize(72,123);
+        mailbox.setScale(0.5);
+
+        this.physics.add.collider(player, mailbox, ()=>{
+            showEnvelope(this);
+        }, null, this);
     }
 
     // player animations
@@ -127,24 +139,16 @@ function create(){
         collisionbox.create(711,700-337).setSize(24,24).setVisible(false);
 
     } else{ //if level is 1 or 5
-        //let ground = this.physics.add.staticImage(500,700-69.5, 'pixel');
         collisionbox.create(500,700-69.5).setSize(1000,139).setVisible(false); //ground
 
-        //ground.refreshBody();
-        //this.physics.add.collider(player, ground);
     }
     this.physics.add.collider(player, collisionbox);
-    //collisionbox.refreshBody();
+    //this.physics.add.collider(mailbox, collisionbox);
+
 
 }
 
 function update(){
-    //console.log(player.body.velocity.y);
-
-    //const cursors = this.cursors;
-    /*if (player.x > 980) { // if player reaches right side of screen
-        nextLevel(this);
-    }*/
 
     if (player.x > 950 && !this.transitioning) {
         this.transitioning = true;
@@ -153,13 +157,10 @@ function update(){
 
     if(cursors.left.isDown){
         player.setVelocityX(-200);
-        player.anims.play('left', true);
     } else if(cursors.right.isDown){
         player.setVelocityX(200);
-        player.anims.play('right', true);
     } else{
         player.setVelocityX(0);
-        player.anims.play('idle', true);
     }
 
     if(cursors.up.isDown && player.body.blocked.down){ //if up arrow key pressed and player is on solid ground
@@ -167,9 +168,17 @@ function update(){
     }
     
     if (player.body.velocity.y < 0) {
-            player.anims.play('jump', true);
-    } else {
+        player.anims.play('jump', true);
+    } else if (player.body.velocity.y>0){
         player.anims.play('fall', true);
+    }else{
+        if(cursors.left.isDown){
+            player.anims.play('left', true);
+        } else if(cursors.right.isDown){
+            player.anims.play('right', true);
+        } else{
+            player.anims.play('idle', true);
+        }
     }
 }
 
@@ -188,13 +197,32 @@ function nextLevel(scene){
     
 }
 
+function showEnvelope(scene){
+    const envelope = scene.add.image(500, 350, "envelope");
+    envelope.setSize(655,351);
+    envelope.setScrollFactor(0);
+    envelope.setDepth(10);
+
+    envelope.setInteractive();
+    envelope.on('pointerdown', ()=>{
+        envelope.destroy();
+        revealLetter(scene);
+    });
+}
+
+function revealLetter(scene){
+    const letter = scene.add.image(500,350,"letter");
+    //letter.setSize(612.69,612.69);
+    letter.setDepth(11);
+}
+
 let config = {
     type: Phaser.AUTO,
     width: 1000,
     height: 700,
     physics:{
         default: 'arcade',
-        arcade: {gravity: {y:1000}, debug: true}
+        arcade: {gravity: {y:1000}, debug: false}
     },
     scene: {preload, create, update}
 };
